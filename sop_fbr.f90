@@ -5,22 +5,23 @@ contains
 
 subroutine rho(carray, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
     implicit none
+    integer, parameter :: dp = kind(1.d0)
     integer, intent(in) :: ndim
     integer, intent(in) :: ndat
     integer, dimension(ndim), intent(in) :: gdim
     integer, dimension(ndim), intent(in) :: tdim
-    real, dimension(ndat), intent(in) :: e_ref
-    real, dimension(ndat, ndim), intent(in) ::g_ref 
-    real, dimension(:), intent(in) :: carray
-    real, intent(out) :: rms
+    real(dp), dimension(ndat), intent(in) :: e_ref
+    real(dp), dimension(ndat, ndim), intent(in) ::g_ref 
+    real(dp), dimension(:), intent(in) :: carray
+    real(dp), intent(out) :: rms
 
-    integer :: i, idx, j, k, jkappa, tkappa
+    integer :: i, idx, j, k, jkappa, tkappa, unt
     integer :: cheblength, nchebs
-    real, dimension(:), allocatable :: u_vects
-    real, dimension(:), allocatable :: core
-    real, dimension(:), allocatable :: coef_u_vects
-    real, dimension(ndat) :: e_sop
-    real :: serieval
+    real(dp), dimension(:), allocatable :: u_vects
+    real(dp), dimension(:), allocatable :: core
+    real(dp), dimension(:), allocatable :: coef_u_vects
+    real(dp), dimension(ndat) :: e_sop
+    real(dp) :: serieval
 
     ! Allocate parameter arrays
 
@@ -38,12 +39,12 @@ subroutine rho(carray, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
 
     ! Main loop to compute SOP energy
     
-    e_sop = 0.0
+    e_sop = 0.0_dp
 
     !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(core, ndim, gdim, g_ref, tdim, coef_u_vects, e_sop)
     do idx = 1, ndat
       
-    u_vects = 0.0
+    u_vects = 0.0_dp
 
     ! Initialize factor vectors
 
@@ -52,7 +53,7 @@ subroutine rho(carray, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
     do i = 1, ndim
        do j = 1, gdim(i)
           jkappa = jkappa + 1
-          serieval = 0.0
+          serieval = 0.0_dp
           do k = 1, tdim(i)
              tkappa = tkappa + 1
              serieval = serieval + coef_u_vects(tkappa) * chebpoly(g_ref(idx, i), k - 1)
@@ -76,19 +77,26 @@ subroutine rho(carray, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
     deallocate(core)
     deallocate(coef_u_vects)
 
+    ! Write RMSE to file
+
+    open(newunit=unt, file="rmse", position="append", status="unknown")
+    write(unt, *) rms
+    close(unt)
+
 end subroutine rho
 
 function tucker_vect(ndim, gdim, u_vects, core) result(prodoned)
     implicit none
+    integer, parameter :: dp = kind(1.d0)
     integer, intent(in) :: ndim
     integer, dimension(ndim), intent(in) :: gdim
-    real, dimension(:), intent(in) :: u_vects
-    real, dimension(:), intent(in) :: core
-    real :: prodoned
+    real(dp), dimension(:), intent(in) :: u_vects
+    real(dp), dimension(:), intent(in) :: core
+    real(dp) :: prodoned
 
     integer :: mode, newsize, chebslice
-    real, dimension(:), allocatable :: tensor_holder
-    real, dimension(:), allocatable :: tensor_prod
+    real(dp), dimension(:), allocatable :: tensor_holder
+    real(dp), dimension(:), allocatable :: tensor_prod
 
     ! Compute tensor n-mode product with all vectors
 
@@ -123,26 +131,31 @@ function tucker_vect(ndim, gdim, u_vects, core) result(prodoned)
     
 end function tucker_vect
 
-real recursive function chebpoly(x_point, degree) result(polval)
-    real, intent(in) :: x_point
+recursive function chebpoly(x_point, degree) result(polval)
+    implicit none
+    integer, parameter :: dp = kind(1.d0)
+    real(dp), intent(in) :: x_point
     integer, intent(in) :: degree
+    real(dp) :: polval
 
     if (degree == 0) then
-        polval = 1
+        polval = 1.0_dp
     else if (degree == 1) then
         polval = x_point
     else
-        polval = 2 * x_point * chebpoly(x_point, degree - 1) - chebpoly(x_point, degree - 2)
+        polval = 2.0_dp * x_point * chebpoly(x_point, degree - 1) - chebpoly(x_point, degree - 2)
     endif
 end function chebpoly
 
 function n_mode(mode, gdim, newsize, core, spp) result(tenprod)
+    implicit none
+    integer, parameter :: dp = kind(1.d0)
     integer, intent(in) :: mode
     integer, intent(in) :: newsize
     integer, dimension(:), intent(in) :: gdim
-    real, dimension(:), intent(in) :: spp 
-    real, dimension(:), intent(in) :: core 
-    real, dimension(newsize) :: tenprod
+    real(dp), dimension(:), intent(in) :: spp 
+    real(dp), dimension(:), intent(in) :: core 
+    real(dp), dimension(newsize) :: tenprod
 
     integer, dimension(2) :: newshape
 
