@@ -26,12 +26,12 @@ X2MIN, X2MAX = -4.5, 4.5
 Y2MIN, Y2MAX = -4.5, 4.5
 Z2MIN, Z2MAX = -4.5, 4.5
 
-X1 = np.linspace(X1MIN, X1MAX, num=6)
-Y1 = np.linspace(Y1MIN, Y1MAX, num=6)
-Z1 = np.linspace(Z1MIN, Z1MAX, num=6)
-X2 = np.linspace(X2MIN, X2MAX, num=6)
-Y2 = np.linspace(Y2MIN, Y2MAX, num=6)
-Z2 = np.linspace(Z2MIN, Z2MAX, num=6)
+X1 = np.linspace(X1MIN, X1MAX, num=5)
+Y1 = np.linspace(Y1MIN, Y1MAX, num=5)
+Z1 = np.linspace(Z1MIN, Z1MAX, num=5)
+X2 = np.linspace(X2MIN, X2MAX, num=5)
+Y2 = np.linspace(Y2MIN, Y2MAX, num=5)
+Z2 = np.linspace(Z2MIN, Z2MAX, num=5)
 
 X1_M, Y1_M, Z1_M, X2_M, Y2_M, Z2_M = np.meshgrid(
     X1, Y1, Z1, X2, Y2, Z2, indexing='ij')
@@ -82,7 +82,7 @@ print(f"Time {T1 - T0}")
 # Try F2PY wrapper
 
 T0F = time.time()
-RMSF = soputils.rho(CARRAY, INTCOORD, E_AB.flatten(), CTEN_DIM, 10)
+RMSF = soputils.rho(CARRAY, INTCOORD, E_AB.flatten(), CTEN_DIM, CHEBDIM)
 T1F = time.time()
 print(f"RMSE {RMSF}")
 print(f"Time {T1F - T0F}")

@@ -7,8 +7,8 @@ subroutine rho(carray, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
     implicit none
     integer, intent(in) :: ndim
     integer, intent(in) :: ndat
-    integer, intent(in) :: tdim
     integer, dimension(ndim), intent(in) :: gdim
+    integer, dimension(ndim), intent(in) :: tdim
     real, dimension(ndat), intent(in) :: e_ref
     real, dimension(ndat, ndim), intent(in) ::g_ref 
     real, dimension(:), intent(in) :: carray
@@ -24,7 +24,7 @@ subroutine rho(carray, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
 
     ! Allocate parameter arrays
 
-    nchebs = sum(gdim) * tdim
+    nchebs = sum(gdim * tdim)
     allocate(coef_u_vects(nchebs))
     allocate(core(product(gdim)))
 
@@ -53,7 +53,7 @@ subroutine rho(carray, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
        do j = 1, gdim(i)
           jkappa = jkappa + 1
           serieval = 0.0
-          do k = 1, tdim
+          do k = 1, tdim(i)
              tkappa = tkappa + 1
              serieval = serieval + coef_u_vects(tkappa) * chebpoly(g_ref(idx, i), k - 1)
           enddo
