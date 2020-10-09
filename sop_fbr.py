@@ -83,6 +83,12 @@ print(f"Time {T1 - T0}")
 
 T0F = time.time()
 RMSF = soputils.rho(CARRAY, INTCOORD, E_AB.flatten(), CTEN_DIM, CHEBDIM)
+RMSF_CHEB = soputils.rho_cheb(CHEB, CORA.flatten(), INTCOORD,
+                              E_AB.flatten(), CTEN_DIM, CHEBDIM)
+RMSF_CORE = soputils.rho_core(CORA.flatten(), CHEB, INTCOORD,
+                              E_AB.flatten(), CTEN_DIM, CHEBDIM)
 T1F = time.time()
 print(f"RMSE {RMSF}")
+print(f"RMSE_CHEB {RMSF_CHEB}")
+print(f"RMSE_CORE {RMSF_CORE}")
 print(f"Time {T1F - T0F}")

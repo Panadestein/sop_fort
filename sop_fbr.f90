@@ -85,6 +85,147 @@ subroutine rho(carray, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
 
 end subroutine rho
 
+subroutine rho_cheb(coef_u_vects, core, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
+    implicit none
+    integer, parameter :: dp = kind(1.d0)
+    integer, intent(in) :: ndim
+    integer, intent(in) :: ndat
+    integer, dimension(ndim), intent(in) :: gdim
+    integer, dimension(ndim), intent(in) :: tdim
+    real(dp), dimension(ndat), intent(in) :: e_ref
+    real(dp), dimension(ndat, ndim), intent(in) ::g_ref 
+    real(dp), dimension(:), intent(in) :: coef_u_vects
+    real(dp), dimension(:), intent(in) :: core
+    real(dp), intent(out) :: rms
+
+    integer :: i, idx, j, k, jkappa, tkappa, unt
+    integer :: cheblength
+    real(dp), dimension(:), allocatable :: u_vects
+    real(dp), dimension(ndat) :: e_sop
+    real(dp) :: serieval
+
+    ! Allocate Chebyshev vectors
+
+    cheblength = sum(gdim)
+    allocate(u_vects(cheblength))
+
+    ! Main loop to compute SOP energy
+    
+    e_sop = 0.0_dp
+
+    !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(core, ndim, gdim, g_ref, tdim, coef_u_vects, e_sop)
+    do idx = 1, ndat
+      
+    u_vects = 0.0_dp
+
+    ! Initialize factor vectors
+
+    jkappa = 0
+    tkappa = 0
+    do i = 1, ndim
+       do j = 1, gdim(i)
+          jkappa = jkappa + 1
+          serieval = 0.0_dp
+          do k = 1, tdim(i)
+             tkappa = tkappa + 1
+             serieval = serieval + coef_u_vects(tkappa) * chebpoly(g_ref(idx, i), k - 1)
+          enddo
+          u_vects(jkappa) = u_vects(jkappa) + serieval
+       enddo
+    enddo
+
+    e_sop(idx) = tucker_vect(ndim, gdim, u_vects, core)
+ 
+    enddo
+    !$OMP END PARALLEL DO
+ 
+    ! Compute RMS
+
+    rms = sqrt(sum((e_sop - e_ref) ** 2) / ndat)
+ 
+    ! Deallocate resources
+ 
+    deallocate(u_vects)
+
+    ! Write RMSE to file
+
+    open(newunit=unt, file="rmse", position="append", status="unknown")
+    write(unt, *) rms
+    close(unt)
+
+end subroutine rho_cheb
+
+subroutine rho_core(core, coef_u_vects, ndat, g_ref, e_ref, ndim, gdim, tdim, rms)
+    implicit none
+    integer, parameter :: dp = kind(1.d0)
+    integer, intent(in) :: ndim
+    integer, intent(in) :: ndat
+    integer, dimension(ndim), intent(in) :: gdim
+    integer, dimension(ndim), intent(in) :: tdim
+    real(dp), dimension(ndat), intent(in) :: e_ref
+    real(dp), dimension(ndat, ndim), intent(in) ::g_ref 
+    real(dp), dimension(:), intent(in) :: coef_u_vects
+    real(dp), dimension(:), intent(in) :: core
+    real(dp), intent(out) :: rms
+
+    integer :: i, idx, j, k, jkappa, tkappa, unt
+    integer :: cheblength
+    real(dp), dimension(:), allocatable :: u_vects
+    real(dp), dimension(ndat) :: e_sop
+    real(dp) :: serieval
+
+    ! Allocate Chebyshev vectors
+
+    cheblength = sum(gdim)
+    allocate(u_vects(cheblength))
+
+    ! Main loop to compute SOP energy
+    
+    e_sop = 0.0_dp
+
+    !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(core, ndim, gdim, g_ref, tdim, coef_u_vects, e_sop)
+    do idx = 1, ndat
+      
+    u_vects = 0.0_dp
+
+    ! Initialize factor vectors
+
+    jkappa = 0
+    tkappa = 0
+    do i = 1, ndim
+       do j = 1, gdim(i)
+          jkappa = jkappa + 1
+          serieval = 0.0_dp
+          do k = 1, tdim(i)
+             tkappa = tkappa + 1
+             serieval = serieval + coef_u_vects(tkappa) * chebpoly(g_ref(idx, i), k - 1)
+          enddo
+          u_vects(jkappa) = u_vects(jkappa) + serieval
+       enddo
+    enddo
+
+    e_sop(idx) = tucker_vect(ndim, gdim, u_vects, core)
+ 
+    enddo
+    !$OMP END PARALLEL DO
+ 
+    ! Compute RMS
+
+    rms = sqrt(sum((e_sop - e_ref) ** 2) / ndat)
+ 
+    ! Deallocate resources
+ 
+    deallocate(u_vects)
+
+    ! Write RMSE to file
+
+    open(newunit=unt, file="rmse", position="append", status="unknown")
+    write(unt, *) rms
+    close(unt)
+
+end subroutine rho_core
+
+
 function tucker_vect(ndim, gdim, u_vects, core) result(prodoned)
     implicit none
     integer, parameter :: dp = kind(1.d0)
